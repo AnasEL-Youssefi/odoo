@@ -1,0 +1,100 @@
+---
+- name: Configure Odoo Server
+  hosts: odoo
+  become: yes
+  vars:
+    odoo_user: odoo
+    odoo_version: "16.0"
+    db_host: "{{ lookup('env','DB_HOST') | default('127.0.0.1') }}"
+    db_name: odoo
+    odoo_addons_path: /opt/odoo/addons
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install packages
+      apt:
+        name:
+          - git
+          - python3
+          - python3-pip
+          - python3-venv
+          - build-essential
+          - wget
+          - gcc
+          - g++
+          - libpq-dev
+          - libxml2-dev
+          - libxslt1-dev
+          - libffi-dev
+          - nodejs
+          - npm
+        state: present
+
+    - name: Create odoo user
+      user:
+        name: "{{ odoo_user }}"
+        create_home: yes
+        shell: /bin/bash
+
+    - name: Clone Odoo
+      git:
+        repo: https://github.com/odoo/odoo.git
+        dest: /opt/odoo
+        version: "{{ odoo_version }}"
+
+    - name: Create Python venv and install pip deps
+      shell: |
+        python3 -m venv /opt/odoo/venv
+        /opt/odoo/venv/bin/pip install -r /opt/odoo/requirements.txt
+      args: { creates: /opt/odoo/venv }
+
+    - name: Copy systemd service
+      copy:
+        dest: /etc/systemd/system/odoo.service
+        content: |
+          [Unit]
+          Description=Odoo
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=odoo
+          ExecStart=/opt/odoo/venv/bin/python /opt/odoo/odoo-bin -c /etc/odoo/odoo.conf
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: reload-daemon
+
+    - name: Create odoo config
+      copy:
+        dest: /etc/odoo/odoo.conf
+        content: |
+          [options]
+          admin_passwd = superadminchangeme
+          db_host = {{ db_host }}
+          db_port = 5432
+          db_user = {{ lookup('env','DB_USER') | default('odoo') }}
+          db_password = {{ lookup('env','DB_PASSWORD') | default('odoo_pass') }}
+          addons_path = /opt/odoo/addons
+          logfile = /var/log/odoo/odoo.log
+
+    - name: Ensure log dir
+      file:
+        path: /var/log/odoo
+        state: directory
+        owner: odoo
+        mode: 0755
+
+    - name: Start and enable odoo
+      systemd:
+        name: odoo
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: reload-daemon
+      systemd:
+        daemon_reload: yes
