@@ -24,8 +24,13 @@ See `docs/` for detailed architecture, backup & security guides.
 ## Extra recommendations & operational notes
 
 -Use Azure Managed PostgreSQL (Flexible Server) with private endpoint and store credentials in Key Vault. If you run PostgreSQL on a VM, secure it and bind to private IP.
+
 -Use Managed Identity on the VM and grant Storage Blob Data Contributor on the Storage Account to upload backups without embedding keys.
+
 -Use Azure Managed Grafana (preview/GA depending on region) to connect to Log Analytics and Prometheus metrics.
+
 -Application Gateway + WAF in front of Nginx for security and central TLS offload (recommended for production).
+
 -Enable Azure Monitor alerts for backup failures & high DB errors.
+
 -Test restore regularly and keep at least 3 copies (hot/cool/archive).
