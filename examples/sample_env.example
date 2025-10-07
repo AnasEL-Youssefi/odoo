@@ -1,0 +1,17 @@
+# Example env for deployment / ansible
+AZURE_RG=odoo-rg
+AZURE_LOCATION=westeurope
+PREFIX=odoo
+ADMIN_USER=odooadmin
+SSH_KEY_PATH=~/.ssh/id_rsa.pub
+
+# Storage/backup
+STORAGE_ACCOUNT=odooStorageAcct
+BACKUP_CONTAINER=odoo-backups
+AZURE_CONN_STRING=DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net
+
+# Key Vault secrets
+KEYVAULT_NAME=odoo-kv
+DB_USER=odoo
+DB_PASSWORD=supersecret
+DB_HOST=odoo-db.postgres.database.azure.com
